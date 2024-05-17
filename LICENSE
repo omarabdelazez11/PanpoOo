@@ -1,46 +1,133 @@
 #include <stdio.h>
 #include <stdlib.h>
-int main()
-{
-    FILE *test;
-    test= fopen("test.txt","w");
+#include <string.h>
 
-    printf("**************************************************************************************************************\n");
-    printf("*************************************Welcome To Panpo company*************************************************\n");
-    printf("**************************************************************************************************************\n");
-    printf("Enter Your First name :");
-    char fname[200];
-    scanf("%s",&fname);
-    printf("Enter Your Second name :");
-    char sname[200];
-    scanf("%s",&sname);
-    char password[200];
-    char password1[200];
-    int attempts = 0;
+#define FILENAME "users.txt"
+#define USERNAME_LEN 50
+#define PASSWORD_LEN 50
+#define ROLE_LEN 10
 
-   do {
-        if (attempts > 0) {
-            printf("Passwords do not match. Please try again.\n");
+typedef struct {
+    char username[USERNAME_LEN];
+    char password[PASSWORD_LEN];
+    char role[ROLE_LEN];
+} User;
+
+void register_user();
+void login();
+void save_user(User user);
+int load_user(const char* username, User* user);
+
+int main() {
+    printf("***************************************\n");
+    printf("*                                     *\n");
+    printf("*        Welcome To The Hell          *\n");
+    printf("*                                     *\n");
+    printf("***************************************\n");
+    int choice;
+
+    while (1) {
+        printf("1. Register\n2. Login\n3. Exit\nChoose an option: ");
+        scanf("%d", &choice);
+        getchar();
+
+        switch (choice) {
+            case 1:
+                register_user();
+                break;
+            case 2:
+                login();
+                break;
+            case 3:
+                return 0;
+            default:
+                printf("Invalid choice. Try again.\n");
         }
+    }
 
-        if (attempts >= 2) {
-            printf("You have exceeded the maximum number of attempts.\n");
-            fclose(test);
-            return printf( "Registration failed");
+    return 0;
+}
+
+void register_user() {
+    User user;
+
+    printf("Enter username: ");
+    fgets(user.username, sizeof(user.username), stdin);
+    user.username[strcspn(user.username, "\n")] = 0;
+
+    printf("Enter password: ");
+    fgets(user.password, sizeof(user.password), stdin);
+    user.password[strcspn(user.password, "\n")] = 0;
+
+    while (1) {
+        printf("Enter role (admin/agent/customer): ");
+        fgets(user.role, sizeof(user.role), stdin);
+        user.role[strcspn(user.role, "\n")] = 0;
+
+
+        if (strcmp(user.role, "admin") == 0 || strcmp(user.role, "agent") == 0 || strcmp(user.role, "customer") == 0) {
+            break;
+        } else {
+            printf("Invalid role. Please enter 'admin', 'agent', or 'customer'.\n");
         }
+    }
 
-        printf("Enter Your Password: ");
-        scanf("%s", password);
+    save_user(user);
 
-        printf("Confirm Your Password: ");
-        scanf("%s", password1);
+    printf("User registered successfully!\n");
+}
 
-        attempts++;
-    } while (strcmp(password, password1) != 0);
+void login() {
+    char username[USERNAME_LEN];
+    User user;
 
-    printf("Registration accepted\n");
+    printf("Enter username: ");
+    fgets(username, sizeof(username), stdin);
+    username[strcspn(username, "\n")] = 0;
 
-    fclose(test);
+    if (load_user(username, &user)) {
+        printf("Enter password: ");
+        char password[PASSWORD_LEN];
+        fgets(password, sizeof(password), stdin);
+        password[strcspn(password, "\n")] = 0;
 
+        if (strcmp(user.password, password) == 0) {
+            printf("Login successful! Welcome %s (%s).\n", user.username, user.role);
+        } else {
+            printf("Invalid password.\n");
+        }
+    } else {
+        printf("User not found.\n");
+    }
+}
 
+void save_user(User user) {
+    FILE *file = fopen(FILENAME, "a");
+    if (file == NULL) {
+        perror("Failed to open file");
+        return;
+    }
+
+    fprintf(file, "%s,%s,%s\n", user.username, user.password, user.role);
+    fclose(file);
+}
+
+int load_user(const char* username, User* user) {
+    FILE *file = fopen(FILENAME, "r");
+    if (file == NULL) {
+        perror("Failed to open file");
+        return 0;
+    }
+
+    char line[USERNAME_LEN + PASSWORD_LEN + ROLE_LEN + 3];
+    while (fgets(line, sizeof(line), file)) {
+        sscanf(line, "%49[^,],%49[^,],%9[^\n]", user->username, user->password, user->role);
+        if (strcmp(user->username, username) == 0) {
+            fclose(file);
+            return 1;
+        }
+    }
+
+    fclose(file);
+    return 0;
 }
