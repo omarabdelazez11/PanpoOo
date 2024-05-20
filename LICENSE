@@ -1,133 +1,536 @@
+//Title: Insurance Company Management System
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
-#define FILENAME "users.txt"
-#define USERNAME_LEN 50
-#define PASSWORD_LEN 50
-#define ROLE_LEN 10
+#define MAX_USERS 100
+#define MAX_NAME_LENGTH 50
+#define MAX_PASSWORD_LENGTH 50
+#define BASE_PREMIUM_CAR 50.00
+#define BASE_PREMIUM_LIFE 30.00
+#define BASE_PREMIUM_HOME 25.00
+#define BASE_PREMIUM_HEALTH 20.00
+#define BASE_PREMIUM_BUSINESS 75.00
 
+// User structure
 typedef struct {
-    char username[USERNAME_LEN];
-    char password[PASSWORD_LEN];
-    char role[ROLE_LEN];
+    char username[MAX_NAME_LENGTH];
+    char password[MAX_PASSWORD_LENGTH];
+    int access_level; // 0 for admin, 1 for agent, 2 for customer
 } User;
 
-void register_user();
+// Policy structure
+struct Policy {
+    int policy_id;
+    char policy_type[50];
+    float premium_amount;
+    char start_date[20];
+    char end_date[20];
+    char beneficiary_info[100];
+};
+
+// Global variables
+User users[MAX_USERS];
+int num_users = 0;
+
+// Function prototypes for user management
 void login();
-void save_user(User user);
-int load_user(const char* username, User* user);
+void registerUser();
+void displayMenu(int access_level);
+void adminMenu();
+void agentMenu();
+void customerMenu();
+void listUsers();
+void deleteUser();
+void changePassword(int user_index);
 
+// Function prototypes for policy management
+void createPolicy(struct Policy new_policy);
+void readPolicy(int policy_id);
+void updatePolicy(int policy_id, struct Policy updated_policy);
+void deletePolicy(int policy_id);
+void policyManagement();
+int getMenuChoice();
+void calculatePremium(struct Policy* new_policy);
+
+// Main function
 int main() {
-    printf("***************************************\n");
-    printf("*                                     *\n");
-    printf("*        Welcome To The Hell          *\n");
-    printf("*                                     *\n");
-    printf("***************************************\n");
-    int choice;
+    // Register the big admin
+    strcpy(users[0].username, "Bola");
+    strcpy(users[0].password, "5555");
+    users[0].access_level = 0; // Admin
+    num_users++;
 
-    while (1) {
-        printf("1. Register\n2. Login\n3. Exit\nChoose an option: ");
-        scanf("%d", &choice);
-        getchar();
+    int choice;
+    do {
+        printf("\n1. Login\n2. Exit\n");
+        printf("Enter your choice: ");
+        if (scanf("%d", &choice) != 1) {
+            printf("Invalid input. Please enter a number.\n");
+            while (getchar() != '\n'); // Clear input buffer
+            continue;
+        }
 
         switch (choice) {
             case 1:
-                register_user();
-                break;
-            case 2:
                 login();
                 break;
-            case 3:
-                return 0;
+            case 2:
+                printf("Exiting...\n");
+                break;
             default:
-                printf("Invalid choice. Try again.\n");
+                printf("Invalid choice. Please try again.\n");
         }
-    }
+    } while (choice != 2);
 
     return 0;
 }
 
-void register_user() {
-    User user;
+// Function to register a new user (exclusive to Bola)
+void registerUser() {
+    char username[MAX_NAME_LENGTH];
+    char password[MAX_PASSWORD_LENGTH];
 
-    printf("Enter username: ");
-    fgets(user.username, sizeof(user.username), stdin);
-    user.username[strcspn(user.username, "\n")] = 0;
+    printf("Enter new username: ");
+    scanf("%s", username);
 
     printf("Enter password: ");
-    fgets(user.password, sizeof(user.password), stdin);
-    user.password[strcspn(user.password, "\n")] = 0;
+    scanf("%s", password);
 
-    while (1) {
-        printf("Enter role (admin/agent/customer): ");
-        fgets(user.role, sizeof(user.role), stdin);
-        user.role[strcspn(user.role, "\n")] = 0;
+    printf("Select access level (0 for admin, 1 for agent, 2 for customer): ");
+    int access_level;
+    scanf("%d", &access_level);
 
+    strcpy(users[num_users].username, username);
+    strcpy(users[num_users].password, password);
+    users[num_users].access_level = access_level;
 
-        if (strcmp(user.role, "admin") == 0 || strcmp(user.role, "agent") == 0 || strcmp(user.role, "customer") == 0) {
-            break;
-        } else {
-            printf("Invalid role. Please enter 'admin', 'agent', or 'customer'.\n");
+    printf("User '%s' registered successfully.\n", username);
+    num_users++;
+}
+
+// Function to authenticate user login
+void login() {
+    char username[MAX_NAME_LENGTH];
+    char password[MAX_PASSWORD_LENGTH];
+    int i;
+
+    printf("Enter username: ");
+    scanf("%s", username);
+
+    printf("Enter password: ");
+    scanf("%s", password);
+
+    for (i = 0; i < num_users; i++) {
+        if (strcmp(username, users[i].username) == 0 && strcmp(password, users[i].password) == 0) {
+            printf("Login successful.\n");
+            displayMenu(users[i].access_level);
+            return;
         }
     }
 
-    save_user(user);
-
-    printf("User registered successfully!\n");
+    printf("Invalid username or password. Please try again.\n");
 }
 
-void login() {
-    char username[USERNAME_LEN];
-    User user;
+// Function to display menu based on user's access level
+void displayMenu(int access_level) {
+    switch (access_level) {
+        case 0:
+            printf("Welcome, Admin!\n");
+            adminMenu();
+            break;
+        case 1:
+            printf("Welcome, Agent!\n");
 
-    printf("Enter username: ");
-    fgets(username, sizeof(username), stdin);
-    username[strcspn(username, "\n")] = 0;
+            break;
+        case 2:
+            printf("Welcome, Customer!\n");
 
-    if (load_user(username, &user)) {
-        printf("Enter password: ");
-        char password[PASSWORD_LEN];
-        fgets(password, sizeof(password), stdin);
-        password[strcspn(password, "\n")] = 0;
 
-        if (strcmp(user.password, password) == 0) {
-            printf("Login successful! Welcome %s (%s).\n", user.username, user.role);
-        } else {
-            printf("Invalid password.\n");
+
+            break;
+        default:
+            printf("Invalid access level.\n");
+    }
+}
+
+// Function to display admin menu options
+void adminMenu() {
+    int choice;
+    do {
+        printf("\nAdmin Menu:\n");
+        printf("1. Manage Users\n");
+        printf("2. Policy Management\n");
+        printf("3. Exit\n");
+        printf("Enter your choice: ");
+        if (scanf("%d", &choice) != 1) {
+            printf("Invalid input. Please enter a number.\n");
+            while (getchar() != '\n'); // Clear input buffer
+            continue;
         }
-    } else {
+
+        switch (choice) {
+            case 1:
+                manageUsers();
+                break;
+            case 2:
+                policyManagement();
+                break;
+            case 3:
+                printf("Exiting...\n");
+                break;
+            default:
+                printf("Invalid choice. Please try again.\n");
+        }
+    } while (choice != 3);
+}
+
+// Function to manage users in admin menu
+void manageUsers() {
+    int choice;
+    do {
+        printf("\nManage Users:\n");
+        printf("1. Register New User\n");
+        printf("2. List Users\n");
+        printf("3. Delete User\n");
+        printf("4. Change User Password\n");
+        printf("5. Back to Admin Menu\n");
+        printf("Enter your choice: ");
+        if (scanf("%d", &choice) != 1) {
+            printf("Invalid input. Please enter a number.\n");
+            while (getchar() != '\n'); // Clear input buffer
+            continue;
+        }
+
+        switch (choice) {
+            case 1:
+                registerUser();
+                break;
+            case 2:
+                listUsers();
+                break;
+            case 3:
+                deleteUser();
+                break;
+            case 4:
+                changePassword(0); // Admin can change any user's password
+                break;
+            case 5:
+                printf("Returning to admin menu...\n");
+                break;
+            default:
+                printf("Invalid choice. Please try again.\n");
+        }
+    } while (choice != 5);
+}
+
+// Function to list all users
+void listUsers() {
+    printf("\nList of Users:\n");
+    for (int i = 0; i < num_users; i++) {
+        printf("Username: %s, Access Level: %d\n", users[i].username, users[i].access_level);
+    }
+}
+
+// Function to delete a user
+void deleteUser() {
+    char username[MAX_NAME_LENGTH];
+    printf("Enter username to delete: ");
+    scanf("%s", username);
+
+    bool found = false;
+    for (int i = 0; i < num_users; i++) {
+        if (strcmp(username, users[i].username) == 0) {
+            found = true;
+            printf("User '%s' deleted.\n", users[i].username);
+            // Shift remaining users to fill the gap
+            for (int j = i; j < num_users -             found; j++) {
+                strcpy(users[j].username, users[j + 1].username);
+                strcpy(users[j].password, users[j + 1].password);
+                users[j].access_level = users[j + 1].access_level;
+            }
+            num_users--;
+            break;
+        }
+    }
+
+    if (!found) {
         printf("User not found.\n");
     }
 }
 
-void save_user(User user) {
-    FILE *file = fopen(FILENAME, "a");
-    if (file == NULL) {
-        perror("Failed to open file");
-        return;
-    }
+// Function to change a user's password
+void changePassword(int user_index) {
+    char username[MAX_NAME_LENGTH];
+    printf("Enter username to change password: ");
+    scanf("%s", username);
 
-    fprintf(file, "%s,%s,%s\n", user.username, user.password, user.role);
-    fclose(file);
-}
-
-int load_user(const char* username, User* user) {
-    FILE *file = fopen(FILENAME, "r");
-    if (file == NULL) {
-        perror("Failed to open file");
-        return 0;
-    }
-
-    char line[USERNAME_LEN + PASSWORD_LEN + ROLE_LEN + 3];
-    while (fgets(line, sizeof(line), file)) {
-        sscanf(line, "%49[^,],%49[^,],%9[^\n]", user->username, user->password, user->role);
-        if (strcmp(user->username, username) == 0) {
-            fclose(file);
-            return 1;
+    bool found = false;
+    for (int i = 0; i < num_users; i++) {
+        if (strcmp(username, users[i].username) == 0) {
+            found = true;
+            printf("Enter new password for user '%s': ", username);
+            scanf("%s", users[i].password);
+            printf("Password changed successfully for user '%s'.\n", username);
+            break;
         }
     }
 
-    fclose(file);
-    return 0;
+    if (!found) {
+        printf("User not found.\n");
+    }
+}
+
+// Function to create a new policy
+void createPolicy(struct Policy new_policy) {
+    FILE *fp = fopen("policies.dat", "ab");
+    if (fp == NULL) {
+        perror("Error in file opening");
+        exit(EXIT_FAILURE);
+    }
+    fwrite(&new_policy, sizeof(struct Policy), 1, fp);
+    fclose(fp);
+}
+
+// Function to read policy information
+void readPolicy(int policy_id) {
+    FILE *fp = fopen("policies.dat", "rb");
+    if (fp == NULL) {
+        perror("Error in file opening");
+        exit(EXIT_FAILURE);
+    }
+    struct Policy p;
+    int found = 0;
+    while (fread(&p, sizeof(struct Policy), 1, fp)) {
+        if (p.policy_id == policy_id) {
+            printf("Policy ID: %d\n", p.policy_id);
+            printf("Policy Type: %s\n", p.policy_type);
+            printf("Premium Amount: %.2f\n", p.premium_amount);
+            printf("Start Date: %s\n", p.start_date);
+            printf("End Date: %s\n", p.end_date);
+            printf("Beneficiary Information: %s\n", p.beneficiary_info);
+            found = 1;
+            break;
+        }
+    }
+    if (!found) {
+        printf("Policy with ID %d not found.\n", policy_id);
+    }
+    fclose(fp);
+}
+
+// Function to update policy information
+void updatePolicy(int policy_id, struct Policy updated_policy) {
+    FILE *fp = fopen("policies.dat", "r+b");
+    if (fp == NULL) {
+        perror("Error in file opening");
+        exit(EXIT_FAILURE);
+    }
+    struct Policy p;
+    int found = 0;
+    while (fread(&p, sizeof(struct Policy), 1, fp)) {
+        if (p.policy_id == policy_id) {
+            fseek(fp, -sizeof(struct Policy), SEEK_CUR);
+            fwrite(&updated_policy, sizeof(struct Policy), 1, fp);
+            found = 1;
+            printf("Policy updated successfully.\n");
+            break;
+        }
+    }
+    if (!found) {
+        printf("Policy with ID %d not found.\n", policy_id);
+    }
+    fclose(fp);
+}
+
+// Function to delete a policy
+void deletePolicy(int policy_id) {
+    FILE *fp = fopen("policies.dat", "r+b");
+    if (fp == NULL) {
+        perror("Error in file opening");
+        exit(EXIT_FAILURE);
+    }
+    FILE *temp_fp = fopen("temp.dat", "wb");
+    if (temp_fp == NULL) {
+        perror("Error in temporary file opening");
+        exit(EXIT_FAILURE);
+    }
+    struct Policy p;
+    int found = 0;
+    while (fread(&p, sizeof(struct Policy), 1, fp)) {
+        if (p.policy_id != policy_id) {
+            fwrite(&p, sizeof(struct Policy), 1, temp_fp);
+        } else {
+            found = 1;
+        }
+    }
+    fclose(fp);
+    fclose(temp_fp);
+    remove("policies.dat");
+    rename("temp.dat", "policies.dat");
+    if (found) {
+        printf("Policy deleted successfully.\n");
+    } else {
+        printf("Policy with ID %d not found.\n", policy_id);
+    }
+}
+
+// Function to manage policies in admin menu
+void policyManagement() {
+    int choice;
+    do {
+        printf("\nPolicy Management:\n");
+        printf("1. Create Policy\n");
+        printf("2. Read Policy\n");
+        printf("3. Update Policy\n");
+        printf("4. Delete Policy\n");
+        printf("5. Back to Admin Menu\n");
+        printf("Enter your choice: ");
+        if (scanf("%d", &choice) != 1) {
+            printf("Invalid input. Please enter a number.\n");
+            while (getchar() != '\n'); // Clear input buffer
+            continue;
+        }
+
+        switch (choice) {
+            case 1: {
+                struct Policy new_policy;
+                printf("Enter Policy ID: ");
+                scanf("%d", &new_policy.policy_id);
+                printf("Enter Policy Type (car, life, home, health, business): ");
+                scanf("%s", new_policy.policy_type);
+                calculatePremium(&new_policy);
+                printf("Enter Start Date (YYYY-MM-DD): ");
+                scanf("%s", new_policy.start_date);
+                printf("Enter End Date (YYYY-MM-DD): ");
+                scanf("%s", new_policy.end_date);
+                printf("Enter Beneficiary Information: ");
+                scanf(" %[^\n]", new_policy.beneficiary_info);
+                createPolicy(new_policy);
+                break;
+            }
+            case 2: {
+                int policy_id;
+                printf("Enter Policy ID to read: ");
+                scanf("%d", &policy_id);
+readPolicy(policy_id);
+break;
+}
+case 3: {
+int policy_id;
+printf("Enter Policy ID to update: ");
+scanf("%d", &policy_id);
+struct Policy updated_policy;
+printf("Enter Policy Type (car, life, home, health, business): ");
+scanf("%s", updated_policy.policy_type);
+calculatePremium(&updated_policy);
+printf("Enter Start Date (YYYY-MM-DD): ");
+scanf("%s", updated_policy.start_date);
+printf("Enter End Date (YYYY-MM-DD): ");
+scanf("%s", updated_policy.end_date);
+printf("Enter Beneficiary Information: ");
+scanf(" %[^\n]", updated_policy.beneficiary_info);
+updatePolicy(policy_id, updated_policy);
+break;
+}
+case 4: {
+int policy_id;
+printf("Enter Policy ID to delete: ");
+scanf("%d", &policy_id);
+deletePolicy(policy_id);
+break;
+}
+case 5:
+printf("Returning to admin menu...\n");
+break;
+default:
+printf("Invalid choice. Please try again.\n");
+}
+} while (choice != 5);
+}
+
+// Function to calculate the premium based on policy type
+void calculatePremium(struct Policy* new_policy) {
+if (strcmp(new_policy->policy_type, "car") == 0) {
+// Car insurance calculations
+int age, accidents, tickets;
+printf("Enter driver's age: ");
+scanf("%d", &age);
+printf("Enter number of accidents in the last 5 years: ");
+scanf("%d", &accidents);
+printf("Enter number of moving violations in the last 3 years: ");
+scanf("%d", &tickets);
+    float age_surcharge = (age < 25) ? 100.0 : (age < 35) ? 20.0 : 0.0;
+    float accident_surcharge = (accidents > 0) ? ((accidents <= 2) ? accidents * 40.0 : (accidents <= 4) ? accidents * 60.0 : 1000.0) : 0.0;
+    float ticket_surcharge = tickets * 20.0;
+
+    new_policy->premium_amount = BASE_PREMIUM_CAR + age_surcharge + accident_surcharge + ticket_surcharge;
+
+} else if (strcmp(new_policy->policy_type, "life") == 0) {
+    // Life insurance calculations
+    int age, health_conditions, smoker;
+    printf("Enter age: ");
+    scanf("%d", &age);
+    printf("Enter number of health conditions: ");
+    scanf("%d", &health_conditions);
+    printf("Enter 1 if you are a smoker, 0 if not: ");
+    scanf("%d", &smoker);
+
+    float age_surcharge = (age < 30) ? 20.0 : (age < 50) ? 50.0 : 100.0;
+    float health_surcharge = health_conditions * 30.0;
+    float smoker_surcharge = smoker ? 50.0 : 0.0;
+
+    new_policy->premium_amount = BASE_PREMIUM_LIFE + age_surcharge + health_surcharge + smoker_surcharge;
+
+} else if (strcmp(new_policy->policy_type, "home") == 0) {
+    // Home insurance calculations
+    float house_value;
+    int year_built, claims;
+    printf("Enter house value: ");
+    scanf("%f", &house_value);
+    printf("Enter year house was built: ");
+    scanf("%d", &year_built);
+    printf("Enter number of claims in the last 5 years: ");
+    scanf("%d", &claims);
+
+    float value_surcharge = house_value * 0.001;
+    float age_surcharge = (2024 - year_built) * 0.5;
+    float claims_surcharge = claims * 20.0;
+    new_policy->premium_amount = BASE_PREMIUM_HOME + value_surcharge + age_surcharge + claims_surcharge;
+
+} else if (strcmp(new_policy->policy_type, "health") == 0) {
+    // Health insurance calculations
+    int age, pre_existing_conditions;
+    printf("Enter age: ");
+    scanf("%d", &age);
+    printf("Enter Number of lives lost: ");
+    scanf("%d", &pre_existing_conditions);
+
+    float age_surcharge = (age < 30) ? 20.0 : (age < 50) ? 50.0 : 100.0;
+    float condition_surcharge = pre_existing_conditions * 50.0;
+
+    new_policy->premium_amount = BASE_PREMIUM_HEALTH + age_surcharge + condition_surcharge;
+
+} else if (strcmp(new_policy->policy_type, "business") == 0) {
+    // Business insurance calculations
+    float revenue;
+    int employees, claims;
+    printf("Enter annual revenue: ");
+    scanf("%f", &revenue);
+    printf("Enter number of employees: ");
+    scanf("%d", &employees);
+    printf("Enter number of claims in the last 5 years: ");
+    scanf("%d", &claims);
+
+    float revenue_surcharge = revenue * 0.001;
+    float employee_surcharge = employees * 10.0;
+    float claims_surcharge = claims * 50.0;
+
+    new_policy->premium_amount = BASE_PREMIUM_BUSINESS + revenue_surcharge + employee_surcharge + claims_surcharge;
+} else {
+    printf("Invalid policy type.\n");
+    new_policy->premium_amount = 0.0;
+}
+
 }
